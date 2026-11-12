@@ -31,13 +31,14 @@ $ docker container run -it --rm cdxsummary
 * Seamless authorization to Internet Archive via the [`ia` CLI tool](https://archive.org/services/docs/api/internetarchive/quickstart.html#configuring)
 * Human-friendly summary by default, but support summarized or detailed JSON reports
 * Self-aware, as the input can be a previously generated JSON report in place of CDX data
+* All statistics are exact and independent of line order, so interleaved or out-of-order CDX shards produce the same report; the random sample is seeded and reproducible
 * Summary includes:
-  * An overview of numbers of captures, consecutive unique URIs, unique hosts, accumulated WARC records size, and the first and last datetimes
+  * An overview of numbers of captures, unique URIs, duplicate captures, unique hosts, rejected (malformed) lines, accumulated WARC records size, and the first and last datetimes
   * A grid of media types and status codes and their respective capture counts
   * A grid of path and query segment length and their respective capture counts
   * A grid of year and month and their respective capture counts
   * Top-N (configurable) hosts and their capture counts
-  * A random sample of N (configurable) memento URIs for `200 OK` HTML pages
+  * A deterministic, order-independent random sample of N (configurable) memento URIs for `200 OK` HTML pages
 
 ## Usage
 
@@ -77,10 +78,12 @@ optional arguments:
 ```
              CDX Overview             
  ──────────────────────────────────── 
- Total Captures in CDX         74,460 
- Consecutive Unique URLs       71,599 
- Consecutive Unique Hosts      12,133 
- Total WARC Records Size      10.2 GB 
+ Total Captures in CDX         74,460
+ Unique URLs                   71,599
+ Duplicate Captures             2,861
+ Unique Hosts                  12,133
+ Rejected Lines                     0
+ Total WARC Records Size      10.2 GB
  First Memento Date       Mar 18 2021 
  Last Memento Date        Mar 18 2021 
  ──────────────────────────────────── 
@@ -170,6 +173,8 @@ $ cdxsummary --json sample.cdx.gz
   "captures": 74460,
   "urls": 71599,
   "hosts": 12133,
+  "dupes": 2861,
+  "rejected": 0,
   "bytes": 10237687828,
   "first": "20210318000104",
   "last": "20210318003748",
@@ -393,3 +398,15 @@ $ cdxsummary --json sample.cdx.gz
 ## Testing
 
 An [interactive test interface](https://internetarchive.github.io/cdx-summary/webcomponent/) is available for the Web Component that renders the JSON summary.
+
+Offline regression tests with bundled CDX fixtures (plain, gzip and bz2) ship in `tests/`. They cover exact unique URL/host counting, duplicate and rejected-line accounting, order-independence under shuffled and interleaved-shard inputs, reproducible sampling, compression, `--load` round-trips and text/JSON number parity:
+
+```
+$ python3 -m pytest tests/
+```
+
+The fixtures can be regenerated from their source descriptions with:
+
+```
+$ python3 tests/make_fixtures.py
+```

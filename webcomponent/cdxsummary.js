@@ -70,12 +70,20 @@ export class CDXSummary extends HTMLElement {
       <td>${this.toNum(this.data.captures)}</td>
     </tr>
     <tr>
-      <th scope="row">Consecutive Unique URIs</th>
+      <th scope="row">Unique URIs</th>
       <td>${this.toNum(this.data.urls)}</td>
     </tr>
     <tr>
-      <th scope="row">Consecutive Unique Hosts</th>
+      <th scope="row">Duplicate Captures</th>
+      <td>${this.toNum(this.data.dupes ?? this.data.captures - this.data.urls)}</td>
+    </tr>
+    <tr>
+      <th scope="row">Unique Hosts</th>
       <td>${this.toNum(this.data.hosts)}</td>
+    </tr>
+    <tr>
+      <th scope="row">Rejected Lines</th>
+      <td>${this.toNum(this.data.rejected ?? 0)}</td>
     </tr>
     <tr>
       <th scope="row">Total WARC Records Size</th>
