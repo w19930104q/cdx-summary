@@ -23,16 +23,21 @@ $ docker container run -it --rm cdxsummary
 
 ## Features
 
-* Summarize local CDX files or remote ones over HTTP
-* Handle `gz` and `bz2` compression seamlessly
-* Handle CDX data input to `STDIN` from pipe
+* Summarize one or many local CDX files or remote ones over HTTP, merged into a single replayable report
+* Deduplicate captures globally by full capture identity (SURT, datetime, and digest), even across segment files
+* Count unique URLs and hosts over the whole input set; time extremes and distributions do not depend on input order or partitioning
+* Handle `gz` and `bz2` compression seamlessly (detected by content, not file extension)
+* Handle CDX data input to `STDIN` from pipe, alone or mixed with file inputs
+* Report invalid records with stable diagnostics (source, line number, and reason) instead of silently skipping them
+* Fail safely: unreadable inputs or inputs with no parseable records abort the run without publishing a half-finished report
+* Replace a previous `--out` report atomically, only after the new report was rendered in full
 * Support [Internet Archive Petabox web item](https://archive.org/services/docs/api/items.html) summarization
 * Support [Wayback Machine CDX Server API](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server) summarization
 * Seamless authorization to Internet Archive via the [`ia` CLI tool](https://archive.org/services/docs/api/internetarchive/quickstart.html#configuring)
 * Human-friendly summary by default, but support summarized or detailed JSON reports
 * Self-aware, as the input can be a previously generated JSON report in place of CDX data
 * Summary includes:
-  * An overview of numbers of captures, consecutive unique URIs, unique hosts, accumulated WARC records size, and the first and last datetimes
+  * An overview of numbers of captures, unique URIs, unique hosts, accumulated WARC records size, and the first and last datetimes
   * A grid of media types and status codes and their respective capture counts
   * A grid of path and query segment length and their respective capture counts
   * A grid of year and month and their respective capture counts
@@ -43,22 +48,22 @@ $ docker container run -it --rm cdxsummary
 
 ```
 $ cdxsummary --help
-usage: cdxsummary [-h] [-a [QUERY]] [-i] [-j] [-l] [-o [FILE]] [-r] [-s [N]] [-t [N]] [-v] [input]
+usage: cdxsummary [-h] [-a [QUERY]] [-i] [-j] [-l] [-o [FILE]] [-r] [-s [N]] [-t [N]] [-v] [input ...]
 
 Summarize web archive capture index (CDX) files.
 
 positional arguments:
-  input                 CDX file path/URL (plain/gz/bz2) or an IA item ID to process (reads from the STDIN, if empty or '-')
+  input                 CDX file paths/URLs (plain/gz/bz2) or IA item IDs to merge into one summary (reads from the STDIN, if empty or '-')
 
 optional arguments:
   -h, --help            show this help message and exit
   -a [QUERY], --api [QUERY]
                         CDX API query parameters (default: 'matchType=exact'), treats the last argument as the lookup URL
-  -i, --item            Treat the input argument as a Petabox item identifier instead of a file path
+  -i, --item            Treat the input arguments as Petabox item identifiers instead of file paths
   -j, --json            Generate summary in JSON format
   -l, --load            Load JSON report instead of CDX
   -o [FILE], --out [FILE]
-                        Write output to the given file (default: STDOUT)
+                        Write output to the given file, atomically replacing any previous report only after full success (default: STDOUT)
   -r, --report          Generate non-summarized JSON report
   -s [N], --samples [N]
                         Number of sample memento URLs in summary (default: 10)
@@ -66,6 +71,31 @@ optional arguments:
                         Number of hosts with maximum captures in summary (default: 10)
   -v, --version         Show version number
 ```
+
+## Merging Multiple CDX Segments
+
+Several CDX segment files can be summarized into one replayable report in a single run. Plain, `gz`, and `bz2` inputs (detected by content) and piped `STDIN` (`-`) can be mixed freely:
+
+```
+$ cdxsummary segment-001.cdx.gz segment-002.cdx.bz2 segment-003.cdx
+$ cat segment-003.cdx | cdxsummary segment-001.cdx.gz -
+```
+
+When inputs are merged:
+
+* Captures are deduplicated by their full identity (SURT, datetime, and digest), so records repeated across segment files are counted once.
+* URLs and hosts are counted as unique values over the whole merged set, and the first/last memento datetimes and all distribution grids are independent of the order and partitioning of the inputs.
+* Records that cannot be parsed are skipped, but each one yields a stable diagnostic on `STDERR` with its source, line number, and reason, e.g.:
+
+  ```
+  Skipped invalid record at segment-002.cdx.bz2:4: Invalid CDX line: '...'
+  ```
+
+* If any input cannot be read (missing file, corrupt compressed stream, failed download) or no input yields a single valid CDX record, the command exits with a non-zero status and publishes no report.
+
+## Atomic Output
+
+With `--out FILE`, the report is rendered to a temporary file in the same directory and moved into place only after it was generated in full. A pre-existing report is therefore never truncated or left half-written, and is preserved as-is if the run or the write fails.
 
 ## Sample Output
 
@@ -78,8 +108,8 @@ optional arguments:
              CDX Overview             
  ──────────────────────────────────── 
  Total Captures in CDX         74,460 
- Consecutive Unique URLs       71,599 
- Consecutive Unique Hosts      12,133 
+ Unique URLs                   71,599 
+ Unique Hosts                  12,133 
  Total WARC Records Size      10.2 GB 
  First Memento Date       Mar 18 2021 
  Last Memento Date        Mar 18 2021 
@@ -391,5 +421,11 @@ $ cdxsummary --json sample.cdx.gz
 </details>
 
 ## Testing
+
+An offline regression suite with local CDX fixtures (plain, `gz`, and `bz2`) covers multi-input merging, out-of-order records, cross-file duplicates, bad-line diagnostics, empty and corrupt inputs, atomic output replacement, and write failures:
+
+```
+$ python3 -m pytest tests/
+```
 
 An [interactive test interface](https://internetarchive.github.io/cdx-summary/webcomponent/) is available for the Web Component that renders the JSON summary.

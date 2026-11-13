@@ -1,0 +1,3 @@
+com,example)/ 20210101000000 http://example.com/ text/html 200 A1B2C3 - - 1000 100 part1.warc.gz
+com,example)/about 20210102000000 http://example.com/about text/html 200 D4E5F6 - - 2000 200 part1.warc.gz
+org,archive)/ 20210103000000 https://archive.org/ text/html 302 G7H8I9 - - 500 300 part1.warc.gz

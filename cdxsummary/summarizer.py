@@ -124,8 +124,8 @@ class ReportSummarizer():
         table.add_column(style="bold cyan")
         table.add_column(style="bold magenta", justify="right")
         table.add_row("Total Captures in CDX", intcomma(self._summary["captures"]))
-        table.add_row("Consecutive Unique URLs", intcomma(self._summary["urls"]))
-        table.add_row("Consecutive Unique Hosts", intcomma(self._summary["hosts"]))
+        table.add_row("Unique URLs", intcomma(self._summary["urls"]))
+        table.add_row("Unique Hosts", intcomma(self._summary["hosts"]))
         table.add_row("Total WARC Records Size", naturalsize(self._summary["bytes"]))
         table.add_row("First Memento Date", self._natural_date(self._summary["first"]))
         table.add_row("Last Memento Date", self._natural_date(self._summary["last"]))
@@ -204,19 +204,19 @@ class ReportSummarizer():
 
 
     def print_summary(self):
-        print("")
+        self._print("")
         self.print_overview()
-        print("")
+        self._print("")
         self.print_mimestatus_grid()
-        print("")
+        self._print("")
         self.print_pathquery_grid()
-        print("")
+        self._print("")
         self.print_yearmonth_grid()
-        print("")
+        self._print("")
         self.print_tophosts()
-        print("")
+        self._print("")
         self.print_samples()
-        print("")
+        self._print("")
 
 
     def print_summary_json(self):

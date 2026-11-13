@@ -1,0 +1,8 @@
+org,archive)/robots.txt 20210105000000 https://archive.org/robots.txt text/plain 404 R4T5Y6 - - 100 600 part3.warc.gz
+com,example)/ 20201231235959 http://example.com/ text/html 200 Z9Y8X7 - - 900 400 part2.warc.gz
+net,example)/img.png 20210104000000 http://example.net/img.png image/png 200 Q1W2E3 - - 3000 500 part2.warc.gz
+com,example)/about 20210102000000 http://example.com/about text/html 200 D4E5F6 - - 2000 200 part1.warc.gz
+org,archive)/ 20210103000000 https://archive.org/ text/html 302 G7H8I9 - - 500 300 part1.warc.gz
+com,example)/ 20210101000000 http://example.com/ text/html 200 A1B2C3 - - 1000 100 part1.warc.gz
+net,example)/img.png 20210104000000 http://example.net/img.png image/png 200 Q1W2E3 - - 3000 500 part2.warc.gz
+com,example)/ 20210101000000 http://example.com/ text/html 200 A1B2C3 - - 1000 100 part1.warc.gz
